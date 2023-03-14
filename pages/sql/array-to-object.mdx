@@ -1,0 +1,36 @@
+# A sql query to get a data stored as an array in a column in the form as an object
+
+Consider a table `data` as below:
+
+| user_id |                                              contacts                                              |
+| :------ | :------------------------------------------------------------------------------------------------: |
+| 1       |       [\{"type":"email","value":"prajwal@gmai.com"\},\{"type":"phone","value":"+91 9855"\}]        |
+| 2       |                                              \<null\>                                              |
+| 3       | [\{"type":"youtube","value":"http://youtu.be/c/123"\},\{"type":"email","value":"ctrl@gmail.com"\}] |
+| 4       |            [\{"type":"phone","value":"+977 9844"\},\{"type":"fax","value":"+9 0123"\}]             |
+
+Expected return data is:
+
+| user_id |                            contacts                            |
+| :------ | :------------------------------------------------------------: |
+| 1       |       \{"email":"prajwal@gmai.com","phone":"+91 9855"\}        |
+| 2       |                            \<null\>                            |
+| 3       | \{"youtube":"http://youtu.be/c/123","email":"ctrl@gmail.com"\} |
+| 4       |            \{"phone":"+977 9844","fax":"+9 0123"\}             |
+
+SQL query:
+
+```sql
+select user_id, json_object_agg(a.contacts ->>'type',a.contacts->'value')contacts from (
+    select user_id, json_array_elements(contacts::json) as contacts
+        from data
+        where contacts is not null and contacts <> 'null'
+)a group by user_id
+
+```
+
+## Important distinction between `->>` and `->`
+
+->> : returns a text
+
+-> : returns a json
